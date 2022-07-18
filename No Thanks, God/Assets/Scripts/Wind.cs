@@ -5,6 +5,7 @@ using TMPro;
 public class Wind : MonoBehaviour
 {
     public Rigidbody playerRb;
+    public Vector3 spawnPosition;
     public Vector3 windVect;
     public Vector3 windVectL;
     private Vector3 baseVect;
@@ -15,18 +16,19 @@ public class Wind : MonoBehaviour
     public float tornadoCooldown = 0f;
     public float tornadoOverdrive = 0f;
     public bool tornadoActive = false;
+    public float windMod = .75f;
     public int tornado = 0;
     public int lastTornado = -1;
     public ParticleSystem rainEffect;
     public TextMeshProUGUI stormText;
-    private float stormMax = .5f;
+    private float stormMax = 50f;
     private int state = 0;
     private GameObject crosshair;
     private float lightningStrike = 0f;
     // Start is called before the first frame update
     void Start()
     {
-        stormText.text = "STORM: " + (windSpeed * 100f);
+        stormText.text = "STORM: " + (windSpeed);
         baseVect = windVect;
         baseVectL = windVectL;
         playerRb = GetComponent<Rigidbody>();
@@ -38,7 +40,7 @@ public class Wind : MonoBehaviour
     {
         switch(state) {
             case 0:if(Input.GetKey(KeyCode.A)) {
-            playerRb.AddForce(windVectL * windSpeed, ForceMode.Impulse);
+            playerRb.AddForce(windVectL * windSpeed * windMod * Time.deltaTime, ForceMode.Impulse);
             //if(windVectL.y <= .3f) {
                     //windVectL = windVectL + new Vector3(0f, .0005f, 0f);
                 //}
@@ -52,7 +54,7 @@ public class Wind : MonoBehaviour
         else {
         windVectL = baseVectL;
         if(Input.GetKey(KeyCode.D)) {
-            playerRb.AddForce(windVect * windSpeed, ForceMode.Impulse);
+            playerRb.AddForce(windVect * windSpeed * windMod * Time.deltaTime, ForceMode.Impulse);
                 //if(windVect.y <= .3f) {
                     //windVect = windVect + new Vector3(0f, .0005f, 0f);
                 //}
@@ -69,13 +71,13 @@ public class Wind : MonoBehaviour
     }
 
         if(tornadoActive) {
-            playerRb.AddForce(Vector3.up * (windSpeed / 2f), ForceMode.Impulse);
+            playerRb.AddForce(Vector3.up * (windSpeed / 4f) * Time.deltaTime, ForceMode.Impulse);
             int xx = (int) (Random.Range(0, 10));
             if(xx == 1) {
-                playerRb.AddForce(Vector3.left * 1f, ForceMode.Impulse);
+                playerRb.AddForce(Vector3.left * 10f * Time.deltaTime, ForceMode.Impulse);
             }
             if(xx == 2) {
-                playerRb.AddForce(Vector3.right * 1f, ForceMode.Impulse);
+                playerRb.AddForce(Vector3.right * 10f * Time.deltaTime, ForceMode.Impulse);
             }
         }
     
@@ -86,9 +88,9 @@ public class Wind : MonoBehaviour
             tornadoOverdrive -= Time.deltaTime;
             if(tornadoOverdrive < 2f && tornadoActive) {
                 tornadoActive = false;
-                windSpeed -=.4f;
-                rainForce = windSpeed / .06f;
-                stormText.text = "STORM: " + (int) (windSpeed * 100f);
+                windSpeed -= 40f;
+                rainForce = windSpeed * 10f;
+                stormText.text = "STORM: " + (int) (windSpeed);
 
             }
         } else {
@@ -104,9 +106,9 @@ public class Wind : MonoBehaviour
         }
 
         if(tornado >= 8) {
-            if(windSpeed > .5f) {
-                stormText.text = "STORM: " + (int) (windSpeed * 1000f) + "!!";
-                rainForce = 15f;
+            if(windSpeed >= 50f) {
+                stormText.text = "STORM: " + (int) (windSpeed * 10f) + "!!";
+                rainForce = 500f;
                 tornadoActive = true;
             }
             tornadoCooldown = 0f;
@@ -116,12 +118,12 @@ public class Wind : MonoBehaviour
         }
 
 
-        if(Input.GetKeyDown(KeyCode.S) && windSpeed >= .2f) {
-            playerRb.AddForce(Vector3.down * rainForce, ForceMode.Impulse);
+        if(Input.GetKeyDown(KeyCode.S) && windSpeed >= 20f) {
+            playerRb.AddForce(Vector3.down * rainForce * Time.deltaTime, ForceMode.Impulse);
             if(!tornadoActive) {
-                windSpeed -= .2f;
-                rainForce = windSpeed / .06f;
-                stormText.text = "STORM: " + (int) (windSpeed * 100f);
+                windSpeed -= 10f;
+                rainForce = windSpeed * 10f;
+                stormText.text = "STORM: " + (int) (windSpeed);
             }
             
             rainEffect.Play();
@@ -137,9 +139,9 @@ public class Wind : MonoBehaviour
         if(lightningStrike <= 0f) {
             lightningStrike = 0f;
             state = 0;
-            stormText.text = "STORM: " + (int) (windSpeed * 100f);
-            windSpeed -= .3f;
-            rainForce = windSpeed / .06f;
+            windSpeed -= 30f;
+            rainForce = windSpeed * 10f;
+            stormText.text = "STORM: " + (int) (windSpeed);
         }
         break;
         }
@@ -149,9 +151,24 @@ public class Wind : MonoBehaviour
 
     void stormIncrease() {
         if(windSpeed < stormMax) {
-            windSpeed += .05f;
-            rainForce = windSpeed / .06f;
-            stormText.text = "STORM: " + (int) (windSpeed * 100f);
+            windSpeed += 5f;
+            rainForce = windSpeed * 10f;
+            stormText.text = "STORM: " + (int) (windSpeed);
+        }
+    }
+
+    void OnTriggerEnter(Collider other) {
+        if(other.gameObject.CompareTag("Hazard")) {
+            transform.position = spawnPosition;
+            playerRb.velocity = Vector3.zero;
+            tornadoActive = false;
+            tornadoCooldown = 0f;
+            tornado = 0;
+            tornadoOverdrive = 0f;
+            lastTornado = -1;
+            windSpeed = 30f;
+            rainForce = windSpeed * 10f;
+            stormText.text = "STORM: " + (int) (windSpeed);
         }
     }
 
