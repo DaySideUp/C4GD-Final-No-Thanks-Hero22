@@ -5,6 +5,11 @@ TagManager:
   serializedVersion: 2
   tags:
   - Hazard
+  - Bottle
+  - Lightning
+  - Checkpoint
+  - DialogueTrigger
+  - Enemy
   layers:
   - Default
   - TransparentFX
