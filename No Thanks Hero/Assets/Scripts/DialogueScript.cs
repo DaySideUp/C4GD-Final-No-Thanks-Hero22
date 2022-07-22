@@ -20,6 +20,7 @@ public class DialogueScript : MonoBehaviour
     public List<string> NameList = new List<string>();
     public List<string> Script = new List<string>();
     public GameObject player;
+    public AudioSource talkNoise;
 
 
     // Start is called before the first frame update
@@ -43,7 +44,6 @@ public class DialogueScript : MonoBehaviour
             gameObject.SetActive(false);
         }
         if(talkSpeed <= 0 && index < textToWrite.Length) {
-
             curText += textToWrite[index];
             index++;
             talkSpeed = speedCap;
@@ -58,6 +58,7 @@ public class DialogueScript : MonoBehaviour
                 player.GetComponent<Wind>().state = 0;
                 gameObject.SetActive(false);
             } else {
+                talkNoise.Play();
                 NameBox.text = NameList[dialogueIndex];
                 curText = "";
                 sectDone = false;
@@ -79,6 +80,7 @@ public class DialogueScript : MonoBehaviour
     }
 
     public void StartDialogue(List<string> ttw, float ts, int sL, List<string> names) {
+        Debug.Log("Talking");
         curText = "";
         player.GetComponent<Wind>().state = -1;
         player.GetComponent<Wind>().resetVelocity();
@@ -97,6 +99,7 @@ public class DialogueScript : MonoBehaviour
         talkSpeed = ts;
         speedCap = ts;
         textDone = false;
+        talkNoise.Play();
 
     }
 }

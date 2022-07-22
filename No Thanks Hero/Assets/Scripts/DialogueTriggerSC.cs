@@ -12,7 +12,7 @@ public class DialogueTriggerSC : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        dialogueBox = GameObject.Find("TextboxFrame");
+        //dialogueBox = GameObject.Find("TextboxFrame");
     }
 
     // Update is called once per frame

@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 public class Wind : MonoBehaviour
 {
+    public bool bossFight = false;
     public Rigidbody playerRb;
     public Vector3 spawnPosition;
     public Vector3 windVect;
@@ -36,10 +38,22 @@ public class Wind : MonoBehaviour
     private float electrocutionTimer = 5f;
     public float levelTimer = 0f;
     public float bottleBoost = 20f;
+    public float chargeDown = .5f;
     public List<GameObject> bottles;
+    public AudioSource bounce;
+    public AudioSource rainSound;
+    public AudioSource thunderSound;
+    public AudioSource pickup;
+    public AudioSource perish;
+    public AudioSource windSound;
+    public AudioSource BGMusic;
+    public int level;
+
+    public GameObject[] clouds;
     // Start is called before the first frame update
     void Start()
     {
+        BGMusic.Play();
         stormText.text = "STORM: " + (windSpeed);
         baseVect = windVect;
         baseVectL = windVectL;
@@ -50,6 +64,32 @@ public class Wind : MonoBehaviour
 
     // Update is called once per frame
     void Update() {
+        int j = 0;
+        for(int i = 0; i < (int) (windSpeed /10); i++) {
+            //if(i + 1  <= (int) (windSpeed/10)) {
+                //Debug.Log((int) (windSpeed/10));
+                clouds[i].SetActive(true);
+                j = i;
+            //} else {
+            }
+            for(int x = j; x < 4; x++) {
+                clouds[x].SetActive(false);
+            }
+        
+        if(!blowLeft && !blowRight && !tornadoActive && Input.GetKey(KeyCode.C)) {
+            chargeDown -= Time.deltaTime;
+        } else {
+            chargeDown = .3f;
+        }
+
+        if(chargeDown <= 0f) {
+            if(windSpeed < stormMax) {
+                windSpeed++;
+                rainForce += 10;
+                stormText.text = "STORM: " + (int) (windSpeed);
+            }
+            chargeDown = .3f;
+        }
         if(Input.GetKeyDown(KeyCode.S) && windSpeed >= 20f && state == 0) {
             raining = true;
         }
@@ -88,6 +128,7 @@ public class Wind : MonoBehaviour
             }
             if(raining) {
                 playerRb.AddForce(Vector3.down * rainForce * Time.deltaTime, ForceMode.Impulse);
+                rainSound.Play();
                 raining = false;
             if(!tornadoActive) {
                 windSpeed -= 10f;
@@ -150,6 +191,7 @@ public class Wind : MonoBehaviour
             tornadoOverdrive -= Time.deltaTime;
             if(tornadoOverdrive < 2f && tornadoActive) {
                 tornadoActive = false;
+                windSound.Stop();
                 windSpeed -= 40f;
                 rainForce = windSpeed * 10f;
                 stormText.text = "STORM: " + (int) (windSpeed);
@@ -172,6 +214,7 @@ public class Wind : MonoBehaviour
                 stormText.text = "STORM: " + (int) (windSpeed * 10f) + "!!";
                 rainForce = 500f;
                 tornadoActive = true;
+                windSound.Play();
             }
             tornadoCooldown = 0f;
             tornado = 0;
@@ -197,6 +240,7 @@ public class Wind : MonoBehaviour
         }
         if(lightningStrike <= 0f) {
             Instantiate(lightning, crosshair.transform.position + new Vector3(0, 4.5f, 0), lightning.transform.rotation);
+            thunderSound.Play();
             lightningStrike = 0f;
             state = 0;
             windSpeed -= 30f;
@@ -220,7 +264,11 @@ public class Wind : MonoBehaviour
 
     void stormIncrease() {
         if(windSpeed < stormMax) {
-            windSpeed += 5f;
+            if(windSpeed + 5 <= stormMax) {
+                windSpeed += 5f;
+            } else {
+                windSpeed = 50f;
+            }
             rainForce = windSpeed * 10f;
             stormText.text = "STORM: " + (int) (windSpeed);
         }
@@ -228,6 +276,7 @@ public class Wind : MonoBehaviour
 
     void OnTriggerEnter(Collider other) {
         if(other.gameObject.CompareTag("Hazard")) {
+                perish.Play();
                 transform.position = spawnPosition;
                 playerRb.velocity = Vector3.zero;
                 tornadoActive = false;
@@ -244,6 +293,7 @@ public class Wind : MonoBehaviour
         }
 
         if(other.gameObject.CompareTag("Bottle") && !tornadoActive) {
+            pickup.Play();
             if(windSpeed + bottleBoost <= 50f) {
                 windSpeed += bottleBoost;
                 } else {
@@ -256,6 +306,7 @@ public class Wind : MonoBehaviour
         }
 
         if(other.gameObject.CompareTag("Checkpoint")) {
+            pickup.Play();
             spawnPosition = transform.position;
             Destroy(other.gameObject);
         }
@@ -265,16 +316,31 @@ public class Wind : MonoBehaviour
             electrocutionTimer = 5f;
             electrocution.Play();
         }
+
+        if(other.gameObject.CompareTag("WeakPoint")) {
+            GameObject.Find("WeaknessSpot").SetActive(false);
+            GameObject.Find("BigBoss").GetComponent<BossEnem>().Hit();
+        }
     }
     IEnumerator LevelClearText() {
         clearText.SetActive(true);
         timeText.text = "Time: " + (int) (levelTimer);
         yield return new WaitForSeconds(5f);
         Destroy(clearText);
+        switch(level) {
+            case 0: SceneManager.LoadScene("BossStage");
+            break;
+            case 1: SceneManager.LoadScene("MainMenu");
+            break;
+            case 2: SceneManager.LoadScene("Victory");
+            break;
+        }
     }
     void OnCollisionEnter(Collision other) {
+
         if(other.gameObject.CompareTag("Enemy")) {
                         if(!Electrocuted) {
+            perish.Play();
             transform.position = spawnPosition;
             playerRb.velocity = Vector3.zero;
             tornadoActive = false;
@@ -291,7 +357,10 @@ public class Wind : MonoBehaviour
         }
            else {
                 Destroy(other.gameObject);
+                perish.Play();
             }
+        } else {
+            bounce.Play();
         }
     }
 

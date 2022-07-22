@@ -10,6 +10,7 @@ TagManager:
   - Checkpoint
   - DialogueTrigger
   - Enemy
+  - WeakPoint
   layers:
   - Default
   - TransparentFX
